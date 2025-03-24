@@ -4,6 +4,7 @@ import CameraViewer from "@/components/CameraViewer";
 import ControlsPanel from "@/components/ControlsPanel";
 import Sidebar from "@/components/Sidebar";
 import SettingsModal from "@/components/SettingsModal";
+import { NetworkInfoPanel } from "@/components/NetworkInfoPanel";
 import { useCameraSettings } from "@/hooks/use-camera-settings";
 import { useRtspStream } from "@/hooks/use-rtsp-stream";
 import { useToast } from "@/hooks/use-toast";
@@ -119,7 +120,10 @@ const Home: React.FC = () => {
             settings={cameraSettings}
           />
           
-          <ControlsPanel settings={cameraSettings} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ControlsPanel settings={cameraSettings} />
+            <NetworkInfoPanel />
+          </div>
         </main>
         
         <Sidebar 

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupRtspStream, disconnectStream } from "./lib/rtsp-stream";
 import { insertNotificationSchema } from "@shared/schema";
 import { z } from "zod";
+import { getIpAddress } from "./lib/network-utils";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // RTSP Stream API Routes
@@ -229,6 +230,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error creating test notification:', error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : 'Failed to create test notification' 
+      });
+    }
+  });
+  
+  // Network information API endpoint
+  app.get('/api/network/info', (req, res) => {
+    try {
+      const ipAddress = getIpAddress();
+      const hostname = req.hostname;
+      const port = process.env.PORT || 5000;
+      
+      res.json({
+        success: true,
+        network: {
+          ipAddress,
+          hostname,
+          port,
+          wsUrl: `ws://${ipAddress}:${port}`,
+          httpUrl: `http://${ipAddress}:${port}`
+        }
+      });
+    } catch (error) {
+      console.error('Error getting network information:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Failed to get network information' 
       });
     }
   });

@@ -140,8 +140,8 @@ export async function setupRtspStream(rtspUrl: string): Promise<string> {
   // Store port for this stream
   setPortForStream(streamId, port);
   
-  // Return WebSocket URL
-  return `ws://${process.env.REPL_ID ? "0.0.0.0" : "localhost"}:${port}`;
+  // Return WebSocket URL with proper IP address
+  return formatWsUrl(port);
 }
 
 /**
