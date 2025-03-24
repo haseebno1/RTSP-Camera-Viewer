@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
+import { formatWsUrl } from './network-utils';
 
 // Store active RTSP streams
 interface StreamInfo {
@@ -30,8 +31,8 @@ export async function setupRtspStream(rtspUrl: string): Promise<string> {
       stream.lastClientDisconnectTimeout = undefined;
     }
     
-    // Return existing WebSocket URL
-    return `ws://localhost:${getPortForStream(streamId)}`;
+    // Return existing WebSocket URL with proper IP address
+    return formatWsUrl(getPortForStream(streamId));
   }
   
   // Get a random port between 10000 and 20000
@@ -45,7 +46,7 @@ export async function setupRtspStream(rtspUrl: string): Promise<string> {
   
   // Start HTTP server
   await new Promise<void>((resolve, reject) => {
-    server.listen(port, () => {
+    server.listen(port, '0.0.0.0', () => {
       resolve();
     });
     server.on('error', (err) => {
@@ -140,7 +141,7 @@ export async function setupRtspStream(rtspUrl: string): Promise<string> {
   setPortForStream(streamId, port);
   
   // Return WebSocket URL
-  return `ws://localhost:${port}`;
+  return `ws://${process.env.REPL_ID ? "0.0.0.0" : "localhost"}:${port}`;
 }
 
 /**

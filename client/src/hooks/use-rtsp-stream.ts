@@ -40,7 +40,11 @@ export function useRtspStream({ url, onError }: UseRtspStreamProps): UseRtspStre
       }
       
       const data = await response.json();
-      const wsUrl = data.wsUrl;
+      // Replace 0.0.0.0 with the current hostname for client connections
+      let wsUrl = data.wsUrl;
+      if (wsUrl.includes('0.0.0.0')) {
+        wsUrl = wsUrl.replace('0.0.0.0', window.location.hostname);
+      }
       
       if (streamRef.current) {
         // Initialize JSMpeg player with the WebSocket URL
