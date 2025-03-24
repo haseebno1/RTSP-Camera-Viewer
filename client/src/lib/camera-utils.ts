@@ -9,6 +9,7 @@ export function parseRtspUrl(url: string): {
   ip?: string;
   port?: string;
   path?: string;
+  host?: string; // Added host field for compatibility with NetworkInfoPanel
 } {
   try {
     // Match rtsp://username:password@ip:port/path
@@ -21,6 +22,7 @@ export function parseRtspUrl(url: string): {
       username: match[1],
       password: match[2],
       ip: match[3],
+      host: match[3], // Set host equal to IP address
       port: match[4] || "554", // Default RTSP port
       path: match[5]
     };
