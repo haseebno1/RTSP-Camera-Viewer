@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -77,3 +77,26 @@ export const insertCameraEventSchema = createInsertSchema(cameraEvents).pick({
 
 export type InsertCameraEvent = z.infer<typeof insertCameraEventSchema>;
 export type CameraEvent = typeof cameraEvents.$inferSelect;
+
+// Local notifications 
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("info"), // info, warning, alert
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  isRead: boolean("is_read").notNull().default(false),
+  cameraId: integer("camera_id"),
+  screenshotUrl: text("screenshot_url"),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  title: true,
+  message: true,
+  type: true,
+  cameraId: true,
+  screenshotUrl: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;

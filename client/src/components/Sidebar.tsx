@@ -2,17 +2,38 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { CameraSettings } from "@/hooks/use-camera-settings";
+import { Bell, CheckCircle } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SidebarProps {
   settings: CameraSettings;
-  onSendTestNotification: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ settings, onSendTestNotification }) => {
-  const [slackEnabled, setSlackEnabled] = useState(false);
+const Sidebar: React.FC<SidebarProps> = ({ settings }) => {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const queryClient = useQueryClient();
 
-  const handleSlackToggle = (checked: boolean) => {
-    setSlackEnabled(checked);
+  const handleNotificationsToggle = (checked: boolean) => {
+    setNotificationsEnabled(checked);
+  };
+
+  const handleSendTestNotification = async () => {
+    try {
+      await fetch('/api/notifications/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: "This is a test notification sent from the camera viewer." 
+        }),
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread/count'] });
+    } catch (error) {
+      console.error('Failed to send test notification:', error);
+    }
   };
 
   return (
@@ -29,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ settings, onSendTestNotification }) =
             >
               <span>360° Panoramic</span>
               {settings.viewMode === "360" && (
-                <span className="material-icons text-primary">check_circle</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
               )}
             </Button>
             <Button 
@@ -39,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ settings, onSendTestNotification }) =
             >
               <span>180° Half-Panorama</span>
               {settings.viewMode === "180" && (
-                <span className="material-icons text-primary">check_circle</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
               )}
             </Button>
             <Button 
@@ -49,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ settings, onSendTestNotification }) =
             >
               <span>Quadrant Split View</span>
               {settings.viewMode === "quad" && (
-                <span className="material-icons text-primary">check_circle</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
               )}
             </Button>
             <Button 
@@ -59,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ settings, onSendTestNotification }) =
             >
               <span>VR Side-by-Side</span>
               {settings.viewMode === "vr" && (
-                <span className="material-icons text-primary">check_circle</span>
+                <CheckCircle className="h-4 w-4 text-primary" />
               )}
             </Button>
           </div>
@@ -88,24 +109,25 @@ const Sidebar: React.FC<SidebarProps> = ({ settings, onSendTestNotification }) =
           </div>
         </section>
         
-        {/* Slack Integration */}
+        {/* Local Notifications */}
         <section>
           <h3 className="text-sm font-semibold uppercase text-gray-400 mb-3">Notifications</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Slack Alerts</span>
+              <span className="text-sm">Camera Notifications</span>
               <Switch
-                id="slack-toggle"
-                checked={slackEnabled}
-                onCheckedChange={handleSlackToggle}
+                id="notifications-toggle"
+                checked={notificationsEnabled}
+                onCheckedChange={handleNotificationsToggle}
               />
             </div>
             <Button 
               className="w-full"
               variant="default"
-              onClick={onSendTestNotification}
-              disabled={!slackEnabled}
+              onClick={handleSendTestNotification}
+              disabled={!notificationsEnabled}
             >
+              <Bell className="h-4 w-4 mr-2" />
               Send Test Notification
             </Button>
           </div>

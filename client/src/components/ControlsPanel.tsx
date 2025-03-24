@@ -16,17 +16,14 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({ settings }) => {
 
   return (
     <Card className="bg-gray-800 border-gray-700">
-      <CardHeader className="border-b border-gray-700 px-4 py-3 flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base font-medium">Camera Controls</CardTitle>
-        <CollapsibleTrigger 
-          className="text-gray-400 hover:text-white"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <ChevronsUpDown className="h-5 w-5" />
-        </CollapsibleTrigger>
-      </CardHeader>
-      
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="border-b border-gray-700 px-4 py-3 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base font-medium">Camera Controls</CardTitle>
+          <CollapsibleTrigger className="text-gray-400 hover:text-white">
+            <ChevronsUpDown className="h-5 w-5" />
+          </CollapsibleTrigger>
+        </CardHeader>
+        
         <CollapsibleContent>
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

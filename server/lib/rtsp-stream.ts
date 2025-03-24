@@ -1,11 +1,11 @@
 import { spawn } from 'child_process';
-import WebSocket from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 
 // Store active RTSP streams
 interface StreamInfo {
   ffmpegProcess: any;
-  wsServer: WebSocket.Server;
+  wsServer: WebSocketServer;
   clients: Set<WebSocket>;
   lastClientDisconnectTimeout?: NodeJS.Timeout;
 }
@@ -41,7 +41,7 @@ export async function setupRtspStream(rtspUrl: string): Promise<string> {
   const server = createServer();
   
   // Create WebSocket server
-  const wsServer = new WebSocket.Server({ server });
+  const wsServer = new WebSocketServer({ server });
   
   // Start HTTP server
   await new Promise<void>((resolve, reject) => {

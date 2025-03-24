@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Header from "@/components/Header";
 import CameraViewer from "@/components/CameraViewer";
 import ControlsPanel from "@/components/ControlsPanel";
@@ -7,10 +7,13 @@ import SettingsModal from "@/components/SettingsModal";
 import { useCameraSettings } from "@/hooks/use-camera-settings";
 import { useRtspStream } from "@/hooks/use-rtsp-stream";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Home: React.FC = () => {
   const { toast } = useToast();
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const queryClient = useQueryClient();
   
   // Setup camera settings state
   const cameraSettings = useCameraSettings();
@@ -31,6 +34,9 @@ const Home: React.FC = () => {
         description: error.message,
         variant: "destructive"
       });
+      
+      // Create a notification for stream error
+      createConnectionErrorNotification(error.message);
     }
   });
 
@@ -39,35 +45,61 @@ const Home: React.FC = () => {
     setSettingsOpen(!settingsOpen);
   };
 
-  // Handle sending test notification to Slack
-  const handleSendTestNotification = async () => {
+  // Send connection status notifications
+  useEffect(() => {
+    // Only send notifications on connection status changes
+    if (connectionStatus === "connected") {
+      createConnectionStatusNotification("Camera connection established", "info");
+    } else if (connectionStatus === "disconnected") {
+      createConnectionStatusNotification("Camera disconnected", "warning");
+    }
+  }, [connectionStatus]);
+
+  // Create connection status notification
+  const createConnectionStatusNotification = async (message: string, type: "info" | "warning" | "alert") => {
     try {
-      const response = await fetch('/api/slack/notify', {
+      await fetch('/api/notifications', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: "Test notification from V380 Pro Fisheye Camera Viewer",
-          cameraStatus: connectionStatus
-        })
+          title: "Camera Status",
+          message,
+          type,
+          cameraId: 1
+        }),
       });
       
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Notification sent to Slack",
-        });
-      } else {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to send notification');
-      }
+      // Invalidate notifications queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread/count'] });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to send notification',
-        variant: "destructive"
+      console.error("Failed to create notification:", error);
+    }
+  };
+
+  // Create error notification for stream connection issues
+  const createConnectionErrorNotification = async (errorMessage: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: "Connection Error",
+          message: errorMessage,
+          type: "alert",
+          cameraId: 1
+        }),
       });
+      
+      // Invalidate notifications queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread/count'] });
+    } catch (error) {
+      console.error("Failed to create error notification:", error);
     }
   };
 
@@ -92,7 +124,6 @@ const Home: React.FC = () => {
         
         <Sidebar 
           settings={cameraSettings}
-          onSendTestNotification={handleSendTestNotification}
         />
       </div>
 

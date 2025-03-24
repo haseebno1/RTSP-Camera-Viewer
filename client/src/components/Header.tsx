@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, Camera } from "lucide-react";
+import NotificationCenter from "./NotificationCenter";
 
 interface HeaderProps {
   connectionStatus: "connected" | "connecting" | "disconnected";
@@ -11,7 +12,7 @@ const Header: React.FC<HeaderProps> = ({ connectionStatus, onSettingsClick }) =>
   return (
     <header className="bg-gray-800 border-b border-gray-700 py-3 px-4 flex justify-between items-center">
       <div className="flex items-center space-x-3">
-        <span className="material-icons text-primary">videocam</span>
+        <Camera className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-semibold">V380 Pro Fisheye Viewer</h1>
       </div>
       <div className="flex items-center space-x-3">
@@ -34,6 +35,11 @@ const Header: React.FC<HeaderProps> = ({ connectionStatus, onSettingsClick }) =>
                 : "Disconnected"}
           </span>
         </div>
+        
+        {/* Notification Center */}
+        <NotificationCenter />
+        
+        {/* Settings Button */}
         <Button variant="ghost" size="icon" onClick={onSettingsClick} aria-label="Settings">
           <Settings className="h-5 w-5" />
         </Button>
