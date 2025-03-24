@@ -5,6 +5,7 @@ import { setupRtspStream, disconnectStream } from "./lib/rtsp-stream";
 import { insertNotificationSchema } from "@shared/schema";
 import { z } from "zod";
 import { getIpAddress } from "./lib/network-utils";
+import { runNetworkDiagnostics, getConnectionSuggestions } from "./lib/network-diagnostics";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // RTSP Stream API Routes
@@ -255,6 +256,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error getting network information:', error);
       res.status(500).json({ 
         message: error instanceof Error ? error.message : 'Failed to get network information' 
+      });
+    }
+  });
+  
+  // Network diagnostics API endpoint
+  app.post('/api/network/diagnostics', async (req, res) => {
+    try {
+      const { cameraIp, rtspPort } = req.body;
+      
+      if (!cameraIp) {
+        return res.status(400).json({ message: 'Camera IP is required' });
+      }
+      
+      // Run network diagnostics
+      const diagnostics = await runNetworkDiagnostics(cameraIp, rtspPort || 554);
+      
+      // Generate suggestions based on diagnostics
+      const suggestions = getConnectionSuggestions(diagnostics, cameraIp);
+      
+      // Create a notification with the diagnostics result
+      await storage.createNotification({
+        title: "Network Diagnostics Completed",
+        message: `Diagnostics for camera at ${cameraIp}: ${diagnostics.status === 'success' ? 'Success' : 
+                  diagnostics.status === 'partial' ? 'Partial connectivity' : 'Connection failed'}`,
+        type: diagnostics.status === 'success' ? 'info' : 
+              diagnostics.status === 'partial' ? 'warning' : 'alert',
+        cameraId: 1, // Default camera ID
+      });
+      
+      res.json({
+        success: true,
+        diagnostics,
+        suggestions
+      });
+    } catch (error) {
+      console.error('Error running network diagnostics:', error);
+      
+      // Create an error notification
+      await storage.createNotification({
+        title: "Network Diagnostics Failed",
+        message: error instanceof Error ? error.message : 'Failed to run network diagnostics',
+        type: "alert",
+        cameraId: 1, // Default camera ID
+      });
+      
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Failed to run network diagnostics' 
       });
     }
   });
