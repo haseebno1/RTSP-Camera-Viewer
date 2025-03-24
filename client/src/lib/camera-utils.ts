@@ -1,3 +1,5 @@
+import { Camera } from '@shared/schema';
+
 /**
  * Utility functions for camera control and RTSP stream handling
  */
@@ -66,6 +68,10 @@ export interface CameraApiSettings {
   nightMode: boolean;
   bwMode: boolean;
   autoExposure: boolean;
+  viewMode?: string;
+  dewarpEnabled?: boolean;
+  streamQuality?: string;
+  renderingQuality?: string;
 }
 
 export function generateCameraApiSettings(
@@ -74,7 +80,11 @@ export function generateCameraApiSettings(
   saturation: number,
   nightMode: boolean,
   bwMode: boolean,
-  autoExposure: boolean
+  autoExposure: boolean,
+  viewMode?: string,
+  dewarpEnabled?: boolean,
+  streamQuality?: string,
+  renderingQuality?: string
 ): CameraApiSettings {
   return {
     brightness,
@@ -82,6 +92,65 @@ export function generateCameraApiSettings(
     saturation,
     nightMode,
     bwMode,
-    autoExposure
+    autoExposure,
+    viewMode,
+    dewarpEnabled,
+    streamQuality,
+    renderingQuality
   };
+}
+
+// Create a new camera object
+export function createCameraObject(name: string, rtspUrl: string, isDefault: boolean = false) {
+  return {
+    name,
+    rtspUrl,
+    isDefault,
+    isActive: true
+  };
+}
+
+// Extract IP and port from a camera
+export function getCameraNetworkInfo(camera: Camera) {
+  const parsed = parseRtspUrl(camera.rtspUrl);
+  return {
+    ip: parsed.ip || '',
+    port: parseInt(parsed.port || '554'),
+    username: parsed.username || '',
+    host: parsed.host || ''
+  };
+}
+
+// Get screenshot filename based on camera and timestamp
+export function getScreenshotFilename(cameraId: number, extension: string = 'jpg') {
+  const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+  return `camera_${cameraId}_${timestamp}.${extension}`;
+}
+
+// Get recording filename based on camera and timestamp
+export function getRecordingFilename(cameraId: number, extension: string = 'mp4') {
+  const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+  return `recording_${cameraId}_${timestamp}.${extension}`;
+}
+
+// Format file size for display
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+
+// Format duration for display
+export function formatDuration(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  const parts = [];
+  if (hrs > 0) parts.push(`${hrs}h`);
+  if (mins > 0) parts.push(`${mins}m`);
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+  
+  return parts.join(' ');
 }
