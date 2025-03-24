@@ -1,0 +1,214 @@
+
+
+# **Product Requirements Document (PRD)**  
+## Fisheye RTSP Web Viewer - V380 Pro IP Camera  
+
+### Document Version  
+- **Version:** 1.1  
+- **Last Updated:** March 2025  
+
+---
+
+### **Project Overview**
+
+The V380 Pro Fisheye Web Viewer aims to provide a dynamic and interactive interface for streaming, controlling, and visualizing 360-degree camera feeds. The project will use **ShadCN** for the front-end UI design, ensuring an intuitive, modern, and responsive interface while maintaining an agnostic integration approach with the Slack API and other possible future integrations.
+
+---
+
+### **Feature Specifications**
+
+#### **1. Fisheye/360° Viewing Controls**
+
+##### Dewarping and Navigation
+- **Dewarping Toggle:**
+  - Switch seamlessly between fisheye and rectilinear (flat) views.
+  - Preserve image quality and detail during the transformation.
+  - Real-time conversion with smooth transitions.
+
+- **Advanced Navigation:**
+  - Enable click-and-drag functionality for smooth 360° panning.
+  - Intuitive mouse or touch-based controls for exploring the full panoramic view.
+
+- **View Mode Presets:**
+  - 360° full panoramic view.
+  - 180° half-panorama mode.
+  - Quadrant split views for quick, focused views.
+  - Quick-access preset selection for different view types.
+
+- **Immersive Experience:**
+  - Optional side-by-side VR mode for supported headsets.
+  - Stereoscopic rendering for an enhanced immersive experience.
+
+#### **2. Camera Stream Adjustments**
+
+##### Real-Time Image Controls
+- **Dynamic Sliders:**
+  - Brightness adjustment with a range of -1 to +1.
+  - Contrast enhancement for better clarity.
+  - Saturation tuning for more vibrant colors.
+  - Instant preview of changes to allow immediate visual feedback.
+
+- **Exposure Management:**
+  - Toggle between auto and manual exposure modes.
+  - Compensation slider to adjust for varying lighting conditions.
+
+- **Advanced Viewing Modes:**
+  - Night mode to enhance visibility in low-light conditions.
+  - Forced black-and-white mode for certain applications.
+  - Infrared-enhanced visualization for specific use cases.
+
+---
+
+### **3. UI Integration with ShadCN**
+
+The UI will leverage **ShadCN** for modern, visually appealing components such as buttons, sliders, modals, and text elements, ensuring a smooth user experience across devices.
+
+#### **Key Components:**
+- **Buttons:** Interactive buttons for sending commands and adjusting camera settings (e.g., Brightness, Dewarping).
+- **Sliders:** Real-time controls for adjusting camera settings like brightness, exposure, etc.
+- **Modals:** A simple, intuitive modal for controlling camera settings, such as switching between fisheye views or activating night mode.
+
+Example integration in React:
+
+```javascript
+import { Button, Modal, Text } from '@shadcn/ui';
+
+const SlackUI = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleButtonClick = async () => {
+    const response = await fetch('/api/slack-message', {
+      method: 'POST',
+      body: JSON.stringify({ message: 'Hello from the UI!' }),
+    });
+
+    if (response.ok) alert('Message sent!');
+    else alert('Failed to send message');
+  };
+
+  return (
+    <div>
+      <Button onClick={() => setIsOpen(true)}>Open Slack Integration</Button>
+      <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+        <Text>Send message to Slack</Text>
+        <Button onClick={handleButtonClick}>Send Message</Button>
+      </Modal>
+    </div>
+  );
+};
+```
+
+---
+
+### **4. Slack Integration (Agnostic)**
+
+#### **Backend (API)**
+
+The backend integration with Slack will be kept agnostic to allow flexibility. You can use Slack's Web API to send messages or notifications. The API route should accept flexible parameters like the message content and Slack channel.
+
+Example API route:
+
+```javascript
+// pages/api/slack-message.js
+import { WebClient } from '@slack/web-api';
+
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    const { message } = req.body;
+    
+    try {
+      const slackClient = new WebClient(process.env.SLACK_TOKEN);
+      await slackClient.chat.postMessage({
+        channel: '#general',  // Channel to send the message
+        text: message,        // Content of the message
+      });
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to send message' });
+    }
+  } else {
+    res.status(405).json({ error: 'Method Not Allowed' });
+  }
+}
+```
+
+The API is agnostic, allowing future extensions to integrate with other services or messaging platforms, simply by modifying the backend logic.
+
+---
+
+### **5. Technical Implementation Details**
+
+#### **Dewarping Architecture**
+
+Using **Three.js** for fisheye dewarping, the following code enables the transformation of fisheye video streams into a spherical view:
+
+```javascript
+import { SphereGeometry, MeshBasicMaterial, Mesh } from 'three';
+
+const createSphericalView = (videoTexture) => {
+  const sphere = new Mesh(
+    new SphereGeometry(500, 60, 40),
+    new MeshBasicMaterial({ map: videoTexture })
+  );
+  sphere.scale.set(-1, 1, 1);  // Correct the image projection for fisheye
+  return sphere;
+};
+```
+
+#### **Camera Control API Endpoint**
+
+In the backend, we’ll expose a RESTful API to control the camera settings:
+
+```javascript
+POST /api/adjust-settings {
+  "brightness": 0.5,   // Brightness level (normalized)
+  "exposure": "auto",  // Exposure mode (auto/manual)
+  "dewarp": "360"      // Dewarp view mode (360° or 180°)
+}
+```
+
+This makes it easy to extend with new settings as required while keeping the architecture flexible and modular.
+
+---
+
+### **6. Development Milestones**
+
+| Phase | Key Tasks | Estimated Duration |
+|-------|-----------|--------------------|
+| 1. Proof of Concept | Implement fisheye dewarping with Three.js | 3 days |
+| 2. Minimum Viable Product | Develop camera control interface using ShadCN | 2 days |
+| 3. Comprehensive Testing | Validate functionality with V380 Pro stream | 1 week |
+
+---
+
+### **7. Risk Management**
+
+| Potential Challenge | Mitigation Strategy |
+|---------------------|---------------------|
+| High GPU Utilization | Implement WebGL1 fallback for performance optimization. |
+| Camera API Complexity | Develop a robust abstraction layer to simplify API interactions. |
+| Mobile Performance | Use adaptive resolution and optimize for mobile browser compatibility. |
+
+---
+
+### **8. Approval Checklist**
+- [ ] Fisheye User Experience Design
+- [ ] Camera API Integration Scope
+- [ ] Performance Benchmark Review
+
+---
+
+### **9. Additional Documentation Needed**
+- Detailed V380 Pro HTTP control command specifications.
+- Interaction design for sliders and buttons.
+- Performance analysis for dewarping and streaming.
+
+---
+
+**Project Contact:** [Your Name/Team]  
+**Revision Date:** March 2025  
+
+---
+
+This version of the PRD integrates **ShadCN** UI components for a sleek and modern user experience while maintaining the flexibility of backend integration (like with Slack) to easily support different configurations. It focuses on creating a clean and user-friendly interface for interacting with the V380 Pro camera stream and provides the flexibility to handle various integrations.
